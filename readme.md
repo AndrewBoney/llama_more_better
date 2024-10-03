@@ -4,7 +4,7 @@ I want to flesh this out a bit more with:
 - scoring without the use of an extra heavyweight llm.  
 - evaluation against common benchmarks
 
-I'm going to start with llama 3.2, either [base](https://huggingface.co/meta-llama/Llama-3.2-1B) or [instruct](https://huggingface.co/meta-llama/Llama-3.2-1B-Instruct)
+I'm going to start with llama 3.2 1B, either [base](https://huggingface.co/meta-llama/Llama-3.2-1B) or [instruct](https://huggingface.co/meta-llama/Llama-3.2-1B-Instruct)
 
 # scoring thoughts
 
