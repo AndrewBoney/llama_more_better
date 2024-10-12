@@ -1,1 +1,3 @@
 .git-credentials
+.venv
+__pycache__
