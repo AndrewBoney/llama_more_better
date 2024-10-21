@@ -36,7 +36,7 @@ def main():
     args = parser.parse_args_into_dataclasses()[0]
 
     # Load tokenizer and model
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, token = "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")
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     tokenizer.pad_token = tokenizer.eos_token
 
         # Load model with quantization
@@ -44,8 +44,7 @@ def main():
         args.model_name,
         #load_in_8bit=True,
         torch_dtype=torch.float16,
-        device_map="auto",
-        token = "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"
+        device_map="auto"
     )
 
     # Prepare model for training
