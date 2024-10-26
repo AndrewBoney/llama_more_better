@@ -10,12 +10,13 @@ from transformers import (
 from peft import (
     LoraConfig,
     get_peft_model,
-    prepare_model_for_kbit_training,
     TaskType
 )
 import torch
 from dataclasses import dataclass, field
 from typing import Optional
+
+def prepare_wiki_qa()
 
 @dataclass
 class ScriptArguments:
@@ -48,7 +49,7 @@ def main():
     )
 
     # Prepare model for training
-    model = prepare_model_for_kbit_training(model)
+    #model = prepare_model_for_kbit_training(model)
 
     # Configure LoRA
     lora_config = LoraConfig(
