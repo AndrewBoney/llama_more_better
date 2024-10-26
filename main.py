@@ -16,8 +16,6 @@ import torch
 from dataclasses import dataclass, field
 from typing import Optional
 
-def prepare_wiki_qa()
-
 @dataclass
 class ScriptArguments:
     model_name: Optional[str] = field(default="meta-llama/Llama-3.2-1B-Instruct")

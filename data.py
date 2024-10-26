@@ -5,7 +5,6 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from torch.utils.data import Dataset
 
-
 def ix_tokens(tokens, idx):
     return {k : v[idx, :] for k, v in tokens}
 
