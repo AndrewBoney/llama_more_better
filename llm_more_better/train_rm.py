@@ -1,11 +1,13 @@
+import lightning as L
+
 import os
 import argparse
-import lightning as L
+import wandb
+import torch
+
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from lightning.pytorch.loggers import WandbLogger
 from transformers import AutoModelForCausalLM
-import wandb
-import torch
 from datetime import datetime
 
 from llm_more_better.model import RewardModelLM
@@ -178,12 +180,21 @@ def train_reward_model(args):
     # Initialize reward model
     print("Initializing reward model...")
     model = RewardModelLM(
-        model=base_model,
+        model_name=args.model_name,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
-        num_epochs=args.max_epochs
+        num_epochs=args.max_epochs,
+        use_lora=args.use_lora,
+        lora_config={
+            "r": args.lora_r,
+            "lora_alpha": args.lora_alpha,
+            "lora_dropout": args.lora_dropout,
+            "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
+            "bias": "none",
+            "task_type": "CAUSAL_LM"
+        } if args.use_lora else None
     )
-    
+        
     # Get data loaders
     print("Loading and processing datasets...")
     train_loader, val_loader, test_loader = get_anthropic_rlhf_data(

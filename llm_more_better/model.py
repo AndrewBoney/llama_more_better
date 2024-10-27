@@ -41,7 +41,7 @@ class RewardModelLM(L.LightningModule):
             default_lora_config = {
                 "r": 8,  # LoRA attention dimension
                 "lora_alpha": 16,  # Alpha scaling
-                "target_modules": ["q_proj", "v_proj"],  # Which modules to apply LoRA to
+                "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],  # Which modules to apply LoRA to
                 "lora_dropout": 0.05,
                 "bias": "none",
                 "task_type": TaskType.CAUSAL_LM
