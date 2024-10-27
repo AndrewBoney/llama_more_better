@@ -72,9 +72,13 @@ class RewardModelLM(L.LightningModule):
         with torch.amp.autocast(self.device.type):
             return self.model.score(logits)
 
+    def get_rewards(self, batch):
+        chosen_rewards = self(**batch["chosen_tokens"])
+        rejected_rewards = self(**batch["rejected_tokens"])
+        return chosen_rewards, rejected_rewards
+
     def training_step(self, batch, batch_idx):
-        chosen_rewards = self(batch["chosen_tokens"])
-        rejected_rewards = self(batch["rejected_tokens"])
+        chosen_rewards, rejected_rewards = self.get_rewards(batch)
         
         # Compute loss (we want chosen_rewards to be higher than rejected_rewards)
         loss = -torch.log(torch.sigmoid(chosen_rewards - rejected_rewards)).mean()
@@ -84,8 +88,7 @@ class RewardModelLM(L.LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
-        chosen_rewards = self(batch["chosen_tokens"])
-        rejected_rewards = self(batch["rejected_tokens"])
+        chosen_rewards, rejected_rewards = self.get_rewards(batch)
         
         # Compute validation loss
         loss = -torch.log(torch.sigmoid(chosen_rewards - rejected_rewards)).mean()
@@ -100,8 +103,7 @@ class RewardModelLM(L.LightningModule):
         return {"val_loss": loss, "val_accuracy": accuracy}
 
     def test_step(self, batch, batch_idx):
-        chosen_rewards = self(batch["chosen_tokens"])
-        rejected_rewards = self(batch["rejected_tokens"])
+        chosen_rewards, rejected_rewards = self.get_rewards(batch)
         
         loss = -torch.log(torch.sigmoid(chosen_rewards - rejected_rewards)).mean()
         accuracy = (chosen_rewards > rejected_rewards).float().mean()

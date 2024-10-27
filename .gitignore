@@ -1,4 +1,7 @@
 .git-credentials
 .venv
-__pycache__
 .netrc
+
+__pycache__
+wandb
+lightning_logs
