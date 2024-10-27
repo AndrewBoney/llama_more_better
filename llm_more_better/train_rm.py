@@ -195,7 +195,8 @@ def train_reward_model(args):
     train_loader, val_loader, test_loader = get_anthropic_rlhf_data(
         batch_size=args.batch_size,
         seed=args.seed,
-        model_name=args.model_name,
+        num_workeers=args.num_workers,
+        model_name=args.model_name
     )
     
     # Setup callbacks

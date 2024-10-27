@@ -95,13 +95,19 @@ class RLHFDataProcessor:
             ),
         }
 
-def get_anthropic_rlhf_data(batch_size=4, seed=42, model_name="meta-llama/Llama-3.2-1B-Instruct"):
+def get_anthropic_rlhf_data(
+    batch_size : int = 4, 
+    seed : int = 42, 
+    num_workers : int = 4,
+    model_name : str ="meta-llama/Llama-3.2-1B-Instruct"
+):
     """
     Load and process the Anthropic RLHF dataset, splitting into train/val/test
     
     Args:
         batch_size (int): Batch size for DataLoader
         seed (int): Random seed for reproducibility
+        num_workers (int): Number of workers for the DataLoader
         model_name (str): Model name for tokenizer
     
     Returns:
@@ -135,6 +141,8 @@ def get_anthropic_rlhf_data(batch_size=4, seed=42, model_name="meta-llama/Llama-
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
+        pin_memory=True,
+        num_workers=num_workers,
         collate_fn=processor.collate_tokens
     )
     
@@ -142,6 +150,8 @@ def get_anthropic_rlhf_data(batch_size=4, seed=42, model_name="meta-llama/Llama-
         val_dataset,
         batch_size=batch_size,
         shuffle=False,
+        pin_memory=True,
+        num_workers=num_workers,
         collate_fn=processor.collate_tokens
     )
     
@@ -149,6 +159,7 @@ def get_anthropic_rlhf_data(batch_size=4, seed=42, model_name="meta-llama/Llama-
         test_dataset,
         batch_size=batch_size,
         shuffle=False,
+        num_workers=num_workers,
         collate_fn=processor.collate_tokens
     )
     
