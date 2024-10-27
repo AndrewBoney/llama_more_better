@@ -7,7 +7,6 @@ import torch
 
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from lightning.pytorch.loggers import WandbLogger
-from transformers import AutoModelForCausalLM
 from datetime import datetime
 
 from llm_more_better.model import RewardModelLM
@@ -24,7 +23,7 @@ def parse_args():
     parser.add_argument(
         "--model_name",
         type=str,
-        default="meta-llama/Llama-2-7b-hf",
+        default="meta-llama/Llama-3.2-1B-Instruct",
         help="Base model to use"
     )
     
@@ -172,11 +171,7 @@ def train_reward_model(args):
         )
     else:
         logger = True  # Use default Lightning logger
-    
-    # Load base model
-    print(f"Loading base model: {args.model_name}")
-    base_model = AutoModelForCausalLM.from_pretrained(args.model_name)
-    
+        
     # Initialize reward model
     print("Initializing reward model...")
     model = RewardModelLM(
