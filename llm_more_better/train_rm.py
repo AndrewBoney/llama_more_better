@@ -111,7 +111,13 @@ def parse_args():
         default=4,
         help="Number of batches for gradient accumulation"
     )
-    
+    parser.add_argument(
+        "--limit_train_batches",
+        type=int,
+        default=None,
+        helt="Number of batches for training"
+    )
+
     # Logging and saving
     parser.add_argument(
         "--wandb_project",
@@ -195,7 +201,7 @@ def train_reward_model(args):
     train_loader, val_loader, test_loader = get_anthropic_rlhf_data(
         batch_size=args.batch_size,
         seed=args.seed,
-        num_workeers=args.num_workers,
+        num_workers=args.num_workers,
         model_name=args.model_name
     )
     
@@ -230,6 +236,7 @@ def train_reward_model(args):
         devices="auto",
         strategy="auto",
         accumulate_grad_batches=args.accumulate_grad_batches,
+        limit_train_batches=args.limit_train_batches,
         log_every_n_steps=args.log_every_n_steps,
         val_check_interval=args.val_check_interval,
     )
