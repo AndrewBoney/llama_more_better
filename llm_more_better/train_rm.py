@@ -179,7 +179,8 @@ def train_reward_model(args):
         logger = WandbLogger(
             project=args.wandb_project,
             name=f"reward_model_{timestamp}",
-            config=vars(args)
+            config=vars(args),
+            save_code=True
         )
     else:
         logger = True  # Use default Lightning logger
