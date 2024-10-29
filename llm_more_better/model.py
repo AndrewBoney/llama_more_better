@@ -31,7 +31,7 @@ class RewardModelLM(L.LightningModule):
         super().__init__()
         
         # Load base model
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map="auto")
         
         # Add reward head
         self.model.score = nn.Linear(self.model.config.hidden_size, 1)
@@ -44,7 +44,7 @@ class RewardModelLM(L.LightningModule):
                 "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],  # Which modules to apply LoRA to
                 "lora_dropout": 0.05,
                 "bias": "none",
-                "task_type": TaskType.CAUSAL_LM
+                "task_type": TaskType.SEQ_CLS #TaskType.CAUSAL_LM
             }
             
             # Use provided config or defaults

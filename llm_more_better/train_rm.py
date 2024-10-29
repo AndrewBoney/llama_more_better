@@ -43,7 +43,7 @@ def parse_args():
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=1e-4,
+        default=1e-5,
         help="Learning rate"
     )
     parser.add_argument(
@@ -69,19 +69,19 @@ def parse_args():
     parser.add_argument(
         "--lora_r", 
         type=int, 
-        default=8, 
+        default=16, 
         help="LoRA attention dimension"
     )
     parser.add_argument(
         "--lora_alpha", 
         type=int, 
-        default=16, 
+        default=32, 
         help="LoRA alpha scaling"
     )
     parser.add_argument(
         "--lora_dropout", 
         type=float, 
-        default=0.05, 
+        default=0.1, 
         help="LoRA dropout"
     )
 
@@ -108,14 +108,20 @@ def parse_args():
     parser.add_argument(
         "--accumulate_grad_batches",
         type=int,
-        default=4,
+        default=1,
         help="Number of batches for gradient accumulation"
     )
     parser.add_argument(
         "--limit_train_batches",
         type=int,
         default=None,
-        helt="Number of batches for training"
+        help="Number of batches for training"
+    )
+    parser.add_argument(
+        "--limit_val_batches",
+        type=int,
+        default=None,
+        help="Number of batches for validation"
     )
 
     # Logging and saving
@@ -237,6 +243,7 @@ def train_reward_model(args):
         strategy="auto",
         accumulate_grad_batches=args.accumulate_grad_batches,
         limit_train_batches=args.limit_train_batches,
+        limit_val_batches=args.limit_val_batches,
         log_every_n_steps=args.log_every_n_steps,
         val_check_interval=args.val_check_interval,
     )
