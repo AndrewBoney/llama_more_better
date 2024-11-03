@@ -31,7 +31,8 @@ class RewardModelLM(L.LightningModule):
             head_bias: Whether to use bias in classification head
         """
         super().__init__()
-        
+        self.save_hyperparameters()
+
         # Load base model
         # TODO: 
         #   does it makes sense to use AutoModelForSequenceClassification or AutoModelForCausalLM here?
@@ -70,22 +71,32 @@ class RewardModelLM(L.LightningModule):
         self.weight_decay = weight_decay
         self.num_epochs = num_epochs
 
-    def forward(self, *args, **kwargs):
+    def forward(self, input_ids, attention_mask=None, *args, **kwargs):
         if "output_hidden_states" in kwargs:
             raise ValueError("`output_hidden_states` can't be set as hidden state outputs are required")
+        if attention_mask is None:
+            attention_mask = torch.ones_like(input_ids)
         
         # TODO: 
         #   is there an easy way of doing this without running full model? (i.e. skipping the pass predicting token logits)
         #   no biggie just would save a few wasted FLOPS
-        output = self.model(*args, **kwargs, output_hidden_states=True)
-        logits = output.hidden_states[-1][:, -1, :]
+        outputs = self.model(input_ids, attention_mask, *args, **kwargs, output_hidden_states=True)
+
+        last_hidden = outputs.hidden_states[-1]
+        sequence_lengths = attention_mask.sum(dim=1) - 1
         
-        with torch.amp.autocast(self.device.type):
-            return self.model.score(logits)
+        # get last actual i.e. non hidden token
+        relevant_hidden_states = last_hidden[
+            torch.arange(last_hidden.shape[0], device = last_hidden.device), 
+            sequence_lengths, 
+            :
+        ]
+
+        return self.model.score(relevant_hidden_states)
 
     def get_rewards(self, batch):
-        chosen_rewards = self(**batch["chosen_tokens"])
-        rejected_rewards = self(**batch["rejected_tokens"])
+        chosen_rewards = self(**batch["chosen"])
+        rejected_rewards = self(**batch["rejected"])
         return chosen_rewards, rejected_rewards
 
     def training_step(self, batch, batch_idx):
@@ -104,7 +115,7 @@ class RewardModelLM(L.LightningModule):
         # Compute validation loss
         loss = -torch.log(torch.sigmoid(chosen_rewards - rejected_rewards)).mean()
         
-        # Compute accuracy (percentage where chosen_rewards > rejected_rewards)
+        # Compute accuracy (percentage where chosen_rewards > rejected_rewards
         accuracy = (chosen_rewards > rejected_rewards).float().mean()
         
         # Log metrics

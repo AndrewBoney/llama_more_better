@@ -79,14 +79,14 @@ class RLHFDataProcessor:
         """Collate function for DataLoader"""
         data = torch.utils.data.default_collate(data)
         return {
-            "chosen_tokens": self.tokenizer(
+            "chosen": self.tokenizer(
                 data["chosen_processed"], 
                 return_tensors="pt", 
                 padding=True,
                 truncation=True,
                 max_length=512
             ),
-            "rejected_tokens": self.tokenizer(
+            "rejected": self.tokenizer(
                 data["rejected_processed"], 
                 return_tensors="pt", 
                 padding=True,

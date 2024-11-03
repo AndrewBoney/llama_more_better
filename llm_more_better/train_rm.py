@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=1e-5,
+        default=1e-4,
         help="Learning rate"
     )
     parser.add_argument(
@@ -94,8 +94,8 @@ def parse_args():
     parser.add_argument(
         "--precision",
         type=str,
-        choices=["32", "16-mixed", "bf16-mixed"],
-        default="16-mixed",
+        choices=["32", "16-mixed", "bf16-mixed", "16-true", "bf16-true"],
+        default="bf16-mixed",
         help="Training precision"
     )
     parser.add_argument(
@@ -189,28 +189,6 @@ def train_reward_model(args):
         )
     else:
         logger = True  # Use default Lightning logger
-        
-    # Initialize reward model
-    print("Initializing reward model...")
-    model = RewardModelLM(
-        model_name=args.model_name,
-        learning_rate=args.learning_rate,
-        weight_decay=args.weight_decay,
-        num_epochs=args.max_epochs,
-        use_lora=args.use_lora,
-        lora_config={
-            "r": args.lora_r,
-            "lora_alpha": args.lora_alpha,
-            "lora_dropout": args.lora_dropout,
-            "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
-            "bias": "none",
-            "task_type": "CAUSAL_LM"
-        } if args.use_lora else None
-    )
-    ## TODO: get torch.compile working. right now this errors weirdly, similar to https://github.com/pytorch/pytorch/issues/98993
-
-    ## TODO: this removes lm_head to free up GPU memory, but is kinda hacky. ideallly make this just to keep lm_head on CPU during training
-    model.model.lm_head = None
 
     # Get data loaders
     print("Loading and processing datasets...")
@@ -257,7 +235,30 @@ def train_reward_model(args):
         log_every_n_steps=args.log_every_n_steps,
         val_check_interval=args.val_check_interval,
     )
-    
+
+    # Initialize reward model
+    print("Initializing reward model...")
+    with trainer.init_module():
+        model = RewardModelLM(
+            model_name=args.model_name,
+            learning_rate=args.learning_rate,
+            weight_decay=args.weight_decay,
+            num_epochs=args.max_epochs,
+            use_lora=args.use_lora,
+            lora_config={
+                "r": args.lora_r,
+                "lora_alpha": args.lora_alpha,
+                "lora_dropout": args.lora_dropout,
+                "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
+                "bias": "none",
+                "task_type": "CAUSAL_LM"
+            } if args.use_lora else None
+        )
+        ## TODO: get torch.compile working. right now this errors weirdly, similar to https://github.com/pytorch/pytorch/issues/98993
+
+        ## TODO: this removes lm_head to free up GPU memory, but is kinda hacky. ideallly make this just to keep lm_head on CPU during training
+        model.model.lm_head = None
+        
     # Train model
     print("Starting training...")
     trainer.fit(
@@ -265,7 +266,7 @@ def train_reward_model(args):
         train_dataloaders=train_loader,
         val_dataloaders=val_loader,
     )
-    
+
     # Test model
     print("Testing model...")
     trainer.test(model=model, dataloaders=test_loader)
