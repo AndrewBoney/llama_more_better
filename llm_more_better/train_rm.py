@@ -1,3 +1,8 @@
+# TODO: 
+#   Something not working, thought fixing grad of model.score would work but apparently not 
+#   (see https://wandb.ai/andy-boney/rlhf-reward-model/runs/1b9lsa8f?nw=nwuserandyboney not learning)
+#   try refactoring to trl https://huggingface.co/docs/trl/main/en/reward_trainer
+
 import lightning as L
 
 import os
@@ -202,7 +207,11 @@ def train_reward_model(args):
             "task_type": "CAUSAL_LM"
         } if args.use_lora else None
     )
-        
+    ## TODO: get torch.compile working. right now this errors weirdly, similar to https://github.com/pytorch/pytorch/issues/98993
+
+    ## TODO: this removes lm_head to free up GPU memory, but is kinda hacky. ideallly make this just to keep lm_head on CPU during training
+    model.model.lm_head = None
+
     # Get data loaders
     print("Loading and processing datasets...")
     train_loader, val_loader, test_loader = get_anthropic_rlhf_data(
@@ -220,7 +229,7 @@ def train_reward_model(args):
             filename="best-checkpoint-{epoch:02d}-{val_loss:.2f}",
             monitor="val_loss",
             mode="min",
-            save_top_k=3,
+            save_top_k=1,
         ),
         # Save latest model
         ModelCheckpoint(
