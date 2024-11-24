@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=4,
+        default=8,
         help="Batch size for training"
     )
     parser.add_argument(
@@ -48,8 +48,20 @@ def parse_args():
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=1e-4,
+        default=5e-5,
         help="Learning rate"
+    )
+    parser.add_argument(
+        "--dropout",
+        type=float,
+        default=0.2,
+        help="Dropout for classification head"
+    )
+    parser.add_argument(
+        "--bias",
+        type=bool,
+        default=True,
+        help="Bias for classification head"
     )
     parser.add_argument(
         "--weight_decay",
@@ -86,7 +98,7 @@ def parse_args():
     parser.add_argument(
         "--lora_dropout", 
         type=float, 
-        default=0.1, 
+        default=0.2, 
         help="LoRA dropout"
     )
 
@@ -95,7 +107,7 @@ def parse_args():
         "--precision",
         type=str,
         choices=["32", "16-mixed", "bf16-mixed", "16-true", "bf16-true"],
-        default="bf16-mixed",
+        default="bf16-true",
         help="Training precision"
     )
     parser.add_argument(
@@ -151,7 +163,7 @@ def parse_args():
     parser.add_argument(
         "--log_every_n_steps",
         type=int,
-        default=10,
+        default=None,
         help="How often to log metrics"
     )
     
@@ -252,13 +264,12 @@ def train_reward_model(args):
                 "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
                 "bias": "none",
                 "task_type": "CAUSAL_LM"
-            } if args.use_lora else None
+            } if args.use_lora else None,
+            bias=args.bias,
+            dropout=args.dropout
         )
         ## TODO: get torch.compile working. right now this errors weirdly, similar to https://github.com/pytorch/pytorch/issues/98993
 
-        ## TODO: this removes lm_head to free up GPU memory, but is kinda hacky. ideallly make this just to keep lm_head on CPU during training
-        model.model.lm_head = None
-        
     # Train model
     print("Starting training...")
     trainer.fit(

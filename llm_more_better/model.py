@@ -7,6 +7,22 @@ from transformers import AutoModelForCausalLM, AutoModelForSequenceClassificatio
 from peft import get_peft_model, LoraConfig, TaskType
 from typing import Optional, Dict, Any
 
+class MLP(nn.Module):
+    def __init__(self, hidden_size : int, dropout_rate : float, bias : bool):
+        super().__init__()
+        self.layers = nn.ModuleList([
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_size, hidden_size // 2, bias = bias),
+            nn.GELU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(hidden_size // 2, 1, bias = bias)
+        ])
+
+    def forward(self, x):
+        for m in self.layers:
+            x = m(x)
+        return x
+
 class RewardModelLM(L.LightningModule):
     def __init__(
         self,
@@ -16,7 +32,8 @@ class RewardModelLM(L.LightningModule):
         num_epochs: int = 10,
         use_lora: bool = False,
         lora_config: Optional[Dict[str, Any]] = None,
-        head_bias: bool = False
+        bias: bool = False,
+        dropout : float = 0.4
     ):
         """
         Initialize Reward Model with optional LoRA support
@@ -28,7 +45,8 @@ class RewardModelLM(L.LightningModule):
             num_epochs: Number of training epochs
             use_lora: Whether to use LoRA
             lora_config: LoRA configuration parameters. If None and use_lora=True, uses defaults
-            head_bias: Whether to use bias in classification head
+            bias: Whether to use bias in classification head
+            dropout: Dropout rate for classification head
         """
         super().__init__()
         self.save_hyperparameters()
@@ -64,12 +82,15 @@ class RewardModelLM(L.LightningModule):
             self.model.print_trainable_parameters()
 
         # add classification head        
-        self.model.score = nn.Linear(self.model.config.hidden_size, 1, bias = head_bias)
+        #self.model.score = nn.Linear(self.model.config.hidden_size, 1, bias = bias)
+        self.model.score = MLP(self.model.config.hidden_size, dropout, bias=bias)
 
         # Save hyperparameters
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.num_epochs = num_epochs
+        self.dropout = dropout
+        self.bias = bias
 
     def forward(self, input_ids, attention_mask=None, *args, **kwargs):
         if "output_hidden_states" in kwargs:
@@ -143,7 +164,8 @@ class RewardModelLM(L.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(
-            self.parameters(),
+            #self.parameters(),
+            [p for p in self.model.parameters() if p.requires_grad],
             lr=self.learning_rate,
             weight_decay=self.weight_decay
         )
